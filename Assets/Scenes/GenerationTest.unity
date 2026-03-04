@@ -225,7 +225,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 128
+  orthographic size: 27
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
@@ -250,7 +250,7 @@ Transform:
   m_GameObject: {fileID: 39217746}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 188, y: 40, z: 124}
+  m_LocalPosition: {x: 47, y: 40, z: 23.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -301,15 +301,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   floorPrefab: {fileID: 5815283340469948270, guid: 2d2d7d039c1e05645875091b7d691a47, type: 3}
-  wallPrefab: {fileID: 6702604469370444736, guid: fb676d26b2a0caa4fafa41fb32a46df4, type: 3}
-  waterPrefab: {fileID: 5815283340469948270, guid: 531befa753afe2c4792f56ecb7aeb4d7, type: 3}
-  maxWalkers: 5
+  wallPrefab: {fileID: 3374658579915093808, guid: fb676d26b2a0caa4fafa41fb32a46df4, type: 3}
+  maxWalkers: 1
   levelWidth: 96
-  levelHeight: 64
+  levelHeight: 48
   edgeOffset: 4
-  maxIterations: 512
-  chanceOfDying: 0.05
-  chanceOfNewWalker: 0.6
+  maxIterations: 1024
+  chanceOfDying: 0
+  chanceOfNewWalker: 0.5
   chanceOfSwitchingDir: 0.25
   perlinLayers: 3
   heightScale: 1

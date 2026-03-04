@@ -1,21 +1,16 @@
 using System.Collections.Generic;
-using Unity.Collections;
-using UnityEditor;
-using UnityEditor.Experimental.GraphView;
+using System.Linq;
 using UnityEngine;
 
 public class DungeonGeneration : MonoBehaviour
 {
-    public enum LevelTile { Empty, Water, Floor, Wall }
+    public enum LevelTile { Empty, Floor, Wall }
 
     [SerializeField]
     GameObject floorPrefab;
 
     [SerializeField]
     GameObject wallPrefab;
-
-    [SerializeField]
-    GameObject waterPrefab;
 
     List<Walker> walkers = new();
     [SerializeField]
@@ -30,7 +25,7 @@ public class DungeonGeneration : MonoBehaviour
 
     public void AddToGrid(Vector2Int pos, LevelTile levelTile)
     {
-        if (grid[pos.x, pos.y] == LevelTile.Empty || grid[pos.x, pos.y] == LevelTile.Water)
+        if (grid[pos.x, pos.y] == LevelTile.Empty || grid[pos.x, pos.y] == LevelTile.Empty)
         {
             grid[pos.x, pos.y] = levelTile;
         }
@@ -63,14 +58,17 @@ public class DungeonGeneration : MonoBehaviour
     [SerializeField]
     float scale;
 
+    Vector2Int gridXLimits;
+    Vector2Int gridYLimits;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         Setup();
 
         GenerateFloors();
-        //GenerateWalls();
-        LakeFill();
+        CheckForSinglesNearYourArea();
+        GenerateWalls();
         GenerateMap();
     }
 
@@ -78,24 +76,25 @@ public class DungeonGeneration : MonoBehaviour
     {
         // INITIALISE GRID
         grid = new LevelTile[levelWidth, levelHeight];
+        gridXLimits = new(edgeOffset, grid.GetLength(0) - 1 - edgeOffset);
+        gridYLimits = new(edgeOffset, grid.GetLength(1) - 1 - edgeOffset);
+
         noiseMap = new float[levelWidth, levelHeight];
 
-        SaveNoiseValueInArray();
+        //SaveNoiseValueInArray();
 
         for (int x = 0; x < levelWidth; x++)
         {
             for (int z = 0; z < levelHeight; z++)
             {
-                grid[x, z] = LevelTile.Water;
+                grid[x, z] = LevelTile.Empty;
             }
         }
 
         // INITIALISE WALKER
-        walkers.Add(new Walker(RandomDirection(), new(grid.GetLength(0) / 2, grid.GetLength(1) / 2)));
-        walkers.Add(new Walker(RandomDirection(), new(Random.Range(4, grid.GetLength(0) - 4), Random.Range(4, grid.GetLength(1) - 4))));
-        walkers.Add(new Walker(RandomDirection(), new(Random.Range(4, grid.GetLength(0) - 4), Random.Range(4, grid.GetLength(1) - 4))));
-        //walkers.Add(new Walker(RandomDirection(), new(grid.GetLength(0) - 4, grid.GetLength(1) - 4)));
-        //walkers.Add(new Walker(RandomDirection(), new(4, 4)));
+        walkers.Add(new Walker(new Vector2Int(grid.GetLength(0) / 2, grid.GetLength(1) / 2), gridXLimits, gridYLimits));
+        // walkers.Add(new Walker(gridXLimits, gridYLimits));
+        // walkers.Add(new Walker(gridXLimits, gridYLimits));
     }
 
     void GenerateFloors()
@@ -106,22 +105,16 @@ public class DungeonGeneration : MonoBehaviour
             {
                 if (walkers[i] == null) break;
 
-                if (grid[walkers[i].Position.x, walkers[i].Position.y] == LevelTile.Water || grid[walkers[i].Position.x, walkers[i].Position.y] == LevelTile.Empty)
+                if (grid[walkers[i].Position.x, walkers[i].Position.y] == LevelTile.Empty)
                 {
                     AddToGrid(walkers[i].Position, LevelTile.Floor);
                 }
             }
 
-            // MOVE WALKERS +1 THEIR DIRECTION
+            // MOVE WALKERS
             for (int i = 0; i < walkers.Count; i++)
             {
-                walkers[i].Position += walkers[i].Direction;
-            }
-
-            // AVOID GRID EDGE AND KEEP WALKERS WITHIN GRID SIZE
-            for (int i = 0; i < walkers.Count; i++)
-            {
-                walkers[i].Position = new(Mathf.Clamp(walkers[i].Position.x, edgeOffset, grid.GetLength(0) - edgeOffset), Mathf.Clamp(walkers[i].Position.y, edgeOffset, grid.GetLength(1) - edgeOffset));
+                walkers[i].Move();
             }
 
             // CHECK IF A WALKER SHOULD DIE
@@ -135,7 +128,7 @@ public class DungeonGeneration : MonoBehaviour
             if (Random.value > chanceOfNewWalker && walkers.Count < maxWalkers)
             {
                 //Debug.Log("ADDED NEW WALKER BUDDY");
-                walkers.Add(new Walker(RandomDirection(), new(grid.GetLength(0) / 2, grid.GetLength(0) / 2)));
+                walkers.Add(new Walker(gridXLimits, gridYLimits));
             }
 
             // CHECK IF THE WALKERS SHOULD CHANGE DIRECTION
@@ -143,7 +136,7 @@ public class DungeonGeneration : MonoBehaviour
             {
                 if (Random.value > chanceOfSwitchingDir)
                 {
-                    walkers[i].Direction = RandomDirection();
+                    walkers[i].ChangeDirection();
                 }
             }
 
@@ -152,17 +145,20 @@ public class DungeonGeneration : MonoBehaviour
         } while (iterations < maxIterations);
     }
 
-    Vector2Int RandomDirection()
+    void CheckForSinglesNearYourArea()
     {
-        int randomNumber = Random.Range(0, 4);
-
-        return randomNumber switch
+        for (int x = edgeOffset; x < grid.GetLength(0) - edgeOffset; x++)
         {
-            0 => Vector2Int.up,
-            1 => Vector2Int.right,
-            2 => Vector2Int.down,
-            _ => Vector2Int.left,
-        };
+            for (int y = edgeOffset; y < grid.GetLength(1) - edgeOffset; y++)
+            {
+                bool[] neighbouring = new bool[] { grid[x, y + 1] == LevelTile.Floor, grid[x + 1, y + 1] == LevelTile.Floor, grid[x + 1, y] == LevelTile.Floor, grid[x + 1, y - 1] == LevelTile.Floor, grid[x, y - 1] == LevelTile.Floor, grid[x - 1, y - 1] == LevelTile.Floor, grid[x - 1, y] == LevelTile.Floor, grid[x - 1, y + 1] == LevelTile.Floor };
+                Debug.Log(neighbouring.Count(c => c));
+                if (neighbouring.Count(c => c) > 6)
+                {
+                    grid[x, y] = LevelTile.Floor;
+                }
+            }
+        }
     }
 
     void GenerateWalls()
@@ -225,70 +221,6 @@ public class DungeonGeneration : MonoBehaviour
         }
     }
 
-    void LakeFill()
-    {
-        int width = grid.GetLength(0);
-        int height = grid.GetLength(1);
-        bool[,] visited = new bool[width, height];
-
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                if (!visited[x, y] && grid[x, y] == LevelTile.Water)
-                {
-                    List<Vector2Int> lakeTiles = new();
-                    bool touchesEdge = FloodFillWater(x, y, ref visited, ref lakeTiles);
-
-                    if (!touchesEdge)
-                    {
-                        foreach (var tile in lakeTiles)
-                        {
-                            grid[tile.x, tile.y] = LevelTile.Floor; // fill enclosed lake
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    bool FloodFillWater(int startX, int startY, ref bool[,] visited, ref List<Vector2Int> lakeTiles)
-    {
-        int width = grid.GetLength(0);
-        int height = grid.GetLength(1);
-        bool touchesEdge = false;
-
-        Queue<Vector2Int> queue = new();
-        queue.Enqueue(new Vector2Int(startX, startY));
-        visited[startX, startY] = true;
-
-        while (queue.Count > 0)
-        {
-            var pos = queue.Dequeue();
-            lakeTiles.Add(pos);
-
-            if (pos.x == 0 || pos.y == 0 || pos.x == width - 1 || pos.y == height - 1)
-                touchesEdge = true;
-
-            foreach (var dir in new Vector2Int[] {
-                Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right })
-            {
-                var n = pos + dir;
-                if (n.x >= 0 && n.y >= 0 && n.x < width && n.y < height && !visited[n.x, n.y])
-                {
-                    if (grid[n.x, n.y] == LevelTile.Water)
-                    {
-                        visited[n.x, n.y] = true;
-                        queue.Enqueue(n);
-                    }
-                }
-            }
-        }
-
-        return touchesEdge;
-    }
-
-
     void SaveNoiseValueInArray()
     {
         float xOffset = Random.Range(-10000f, 10000f);
@@ -317,27 +249,17 @@ public class DungeonGeneration : MonoBehaviour
 
     public void GenerateMap()
     {
-        // GameObject floorCollider = new();
-        // floorCollider.name = "FloorCollider";
-        // floorCollider.transform.position = new(levelWidth / 2, 0, levelHeight / 2);
-        // floorCollider.AddComponent<BoxCollider>();
-        // floorCollider.GetComponent<BoxCollider>().size = new Vector3(levelWidth, 0.2f, levelHeight);
-
         for (int x = 0; x < levelWidth - 1; x++)
         {
             for (int z = 0; z < levelHeight - 1; z++)
             {
-                Debug.Log(noiseMap[x, z]);
                 switch (grid[x, z])
                 {
-                    case LevelTile.Water:
-                        Instantiate(waterPrefab, new Vector3(x * 4, 0, z * 4), Quaternion.identity, transform);
-                        break;
                     case LevelTile.Floor:
-                        Instantiate(floorPrefab, new Vector3(x * 4, 1/*noiseMap[x, z]*/, z * 4), Quaternion.identity, transform);
+                        Instantiate(floorPrefab, new Vector3(x, 0.1f, z), Quaternion.identity, transform);
                         break;
                     case LevelTile.Wall:
-                        Instantiate(wallPrefab, new Vector3(x * 4, 1/*noiseMap[x, z]*/, z * 4), Quaternion.identity, transform);
+                        Instantiate(wallPrefab, new Vector3(x, 0.1f, z), Quaternion.identity, transform);
                         break;
                     default:
                         //Debug.Log("Empty.");
