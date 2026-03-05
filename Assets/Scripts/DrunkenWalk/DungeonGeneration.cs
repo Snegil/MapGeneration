@@ -62,11 +62,13 @@ public class DungeonGeneration : MonoBehaviour
     public void RegenerateMap(InputAction.CallbackContext context)
     {
         if (!context.started) return;
+        StopAllCoroutines();
         StartCoroutine(RegenerateMapCoroutine());
     }
     // Regenerate map to get a completely new one.
     public void RegenerateMap()
     {
+        StopAllCoroutines();
         StartCoroutine(RegenerateMapCoroutine());
     }
 
