@@ -64,6 +64,7 @@ public class DungeonGeneration : MonoBehaviour
         if (!context.started) return;
         StartCoroutine(RegenerateMapCoroutine());
     }
+    // Regenerate map to get a completely new one.
     public void RegenerateMap()
     {
         StartCoroutine(RegenerateMapCoroutine());
@@ -80,6 +81,7 @@ public class DungeonGeneration : MonoBehaviour
         GenerateWalls();
         GenerateMap();
     }
+    // Clear all child-objects and all walkers.
     void ResetMap()
     {
         for (int i = 0; i < transform.childCount; i++)
@@ -92,12 +94,7 @@ public class DungeonGeneration : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        Setup();
-
-        GenerateFloors();
-        Despeckle();
-        GenerateWalls();
-        GenerateMap();
+        RegenerateMap();
     }
 
     void Setup()
@@ -123,6 +120,7 @@ public class DungeonGeneration : MonoBehaviour
             }
         }
     }
+
 
     void GenerateFloors()
     {
@@ -155,7 +153,6 @@ public class DungeonGeneration : MonoBehaviour
             // CHECK IF A NEW WALKER SHOULD BE MADE
             if (Random.value > chanceOfNewWalker && walkers.Count < maxWalkers)
             {
-                //Debug.Log("ADDED NEW WALKER BUDDY");
                 walkers.Add(new Walker(gridXLimits, gridYLimits));
             }
 
@@ -173,12 +170,14 @@ public class DungeonGeneration : MonoBehaviour
         } while (iterations < maxIterations);
     }
 
+    // Despeckle checks all surrounding tiles and if the surrounding tiles match, change the target to floor.
     void Despeckle()
     {
         for (int x = edgeOffset; x < grid.GetLength(0) - edgeOffset; x++)
         {
             for (int y = edgeOffset; y < grid.GetLength(1) - edgeOffset; y++)
             {
+                // Check all surrounding tiles, and check if they're leveltile.floor.
                 bool[] neighbouring = new bool[] { grid[x, y + 1] == LevelTile.Floor,
                                                    grid[x + 1, y + 1] == LevelTile.Floor,
                                                    grid[x + 1, y] == LevelTile.Floor,
@@ -188,6 +187,7 @@ public class DungeonGeneration : MonoBehaviour
                                                    grid[x - 1, y] == LevelTile.Floor,
                                                    grid[x - 1, y + 1] == LevelTile.Floor
                                                  };
+                // If the amount of neighbouring tiles are floors, change the targeted one, to floor.
                 if (neighbouring.Count(c => c) >= despeckleNeighbourLimit)
                 {
                     grid[x, y] = LevelTile.Floor;
@@ -196,6 +196,7 @@ public class DungeonGeneration : MonoBehaviour
         }
     }
 
+    // Check all tiles on the grid, and if a leveltile.floor has leveltile.empty next to it, add a wall there.
     void GenerateWalls()
     {
         for (int x = edgeOffset; x < grid.GetLength(0); x++)
@@ -260,25 +261,8 @@ public class DungeonGeneration : MonoBehaviour
     {
         StartCoroutine(GenerateTiles());
         return;
-        // for (int x = 0; x < levelWidth - 1; x++)
-        // {
-        //     for (int z = 0; z < levelHeight - 1; z++)
-        //     {
-        //         switch (grid[x, z])
-        //         {
-        //             case LevelTile.Floor:
-        //                 Instantiate(floorPrefab, new Vector3(x, 0.1f, z), Quaternion.identity, transform);
-        //                 break;
-        //             case LevelTile.Wall:
-        //                 Instantiate(wallPrefab, new Vector3(x, 0.1f, z), Quaternion.identity, transform);
-        //                 break;
-        //             default:
-        //                 //Debug.Log("Empty.");
-        //                 break;
-        //         }
-        //     }
-        // }
     }
+    // Instantiate tiles into game world at assigned locations, reasoning behind coroutine is to make it animated.
     IEnumerator GenerateTiles()
     {
         for (int z = levelHeight - 1; z > 0; z--)
