@@ -47,16 +47,8 @@ public class DungeonGeneration : MonoBehaviour
     [SerializeField]
     float chanceOfSwitchingDir = 0.5f;
 
-    float[,] noiseMap;
-    [Space, Header("Perlin Noise Settings --")]
     [SerializeField]
-    int perlinLayers;
-    [SerializeField]
-    int heightScale;
-    [SerializeField]
-    int sharpness;
-    [SerializeField]
-    float scale;
+    int despeckleNeighbourLimit = 4;
 
     Vector2Int gridXLimits;
     Vector2Int gridYLimits;
@@ -67,7 +59,7 @@ public class DungeonGeneration : MonoBehaviour
         Setup();
 
         GenerateFloors();
-        CheckForSinglesNearYourArea();
+        Despeckle();
         GenerateWalls();
         GenerateMap();
     }
@@ -79,10 +71,16 @@ public class DungeonGeneration : MonoBehaviour
         gridXLimits = new(edgeOffset, grid.GetLength(0) - 1 - edgeOffset);
         gridYLimits = new(edgeOffset, grid.GetLength(1) - 1 - edgeOffset);
 
-        noiseMap = new float[levelWidth, levelHeight];
+        SetAllTilesAsEmpty();
 
-        //SaveNoiseValueInArray();
+        // INITIALISE WALKER
+        walkers.Add(new Walker(gridXLimits, gridYLimits));
+        // walkers.Add(new Walker(gridXLimits, gridYLimits));
+        // walkers.Add(new Walker(gridXLimits, gridYLimits));
+    }
 
+    void SetAllTilesAsEmpty()
+    {
         for (int x = 0; x < levelWidth; x++)
         {
             for (int z = 0; z < levelHeight; z++)
@@ -90,11 +88,6 @@ public class DungeonGeneration : MonoBehaviour
                 grid[x, z] = LevelTile.Empty;
             }
         }
-
-        // INITIALISE WALKER
-        walkers.Add(new Walker(new Vector2Int(grid.GetLength(0) / 2, grid.GetLength(1) / 2), gridXLimits, gridYLimits));
-        // walkers.Add(new Walker(gridXLimits, gridYLimits));
-        // walkers.Add(new Walker(gridXLimits, gridYLimits));
     }
 
     void GenerateFloors()
@@ -145,7 +138,7 @@ public class DungeonGeneration : MonoBehaviour
         } while (iterations < maxIterations);
     }
 
-    void CheckForSinglesNearYourArea()
+    void Despeckle()
     {
         for (int x = edgeOffset; x < grid.GetLength(0) - edgeOffset; x++)
         {
@@ -153,7 +146,7 @@ public class DungeonGeneration : MonoBehaviour
             {
                 bool[] neighbouring = new bool[] { grid[x, y + 1] == LevelTile.Floor, grid[x + 1, y + 1] == LevelTile.Floor, grid[x + 1, y] == LevelTile.Floor, grid[x + 1, y - 1] == LevelTile.Floor, grid[x, y - 1] == LevelTile.Floor, grid[x - 1, y - 1] == LevelTile.Floor, grid[x - 1, y] == LevelTile.Floor, grid[x - 1, y + 1] == LevelTile.Floor };
                 Debug.Log(neighbouring.Count(c => c));
-                if (neighbouring.Count(c => c) > 6)
+                if (neighbouring.Count(c => c) >= despeckleNeighbourLimit)
                 {
                     grid[x, y] = LevelTile.Floor;
                 }
@@ -217,32 +210,6 @@ public class DungeonGeneration : MonoBehaviour
                 {
                     grid[x - 1, y + 1] = LevelTile.Wall;
                 }
-            }
-        }
-    }
-
-    void SaveNoiseValueInArray()
-    {
-        float xOffset = Random.Range(-10000f, 10000f);
-        float yOffset = Random.Range(-10000f, 10000f);
-
-        for (int i = 0; i < grid.GetLength(0); i++)
-        {
-            for (int j = 0; j < grid.GetLength(1); j++)
-            {
-                float noiseValue = 0f;
-
-                for (int k = 0; k < perlinLayers; k++)
-                {
-                    float frequency = Mathf.Pow(2f, k);
-                    float amplitude = Mathf.Pow(0.5f, k);
-                    noiseValue += Mathf.PerlinNoise(i * scale * frequency + xOffset, j * scale * frequency + yOffset) * amplitude;
-                }
-
-                noiseValue *= heightScale;
-                noiseValue = Mathf.Pow(noiseValue, sharpness);
-
-                noiseMap[i, j] = noiseValue;
             }
         }
     }

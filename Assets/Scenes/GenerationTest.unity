@@ -131,6 +131,9 @@ GameObject:
   - component: {fileID: 39217749}
   - component: {fileID: 39217748}
   - component: {fileID: 39217747}
+  - component: {fileID: 39217752}
+  - component: {fileID: 39217753}
+  - component: {fileID: 39217751}
   m_Layer: 0
   m_Name: Camera
   m_TagString: Untagged
@@ -256,6 +259,92 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+--- !u!114 &39217751
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 39217746}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Actions: {fileID: -944628639613478452, guid: bb3a355aa5b08ab44a874352e9ed5bf3, type: 3}
+  m_NotificationBehavior: 2
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents:
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 39217752}
+        m_TargetAssemblyTypeName: SceneReset, Assembly-CSharp
+        m_MethodName: SceneResetButton
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: e24ced6a-71cd-439e-bd12-b6ee9c8ee7b4
+    m_ActionName: 'Controls/SPACEBAR[/Keyboard/space]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 39217753}
+        m_TargetAssemblyTypeName: QuitScript, Assembly-CSharp
+        m_MethodName: QuitGame
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: cfed94c5-f87d-453c-ad1e-34acaff1c800
+    m_ActionName: 'Controls/ESCAPE[/Keyboard/escape]'
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: Controls
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
+--- !u!114 &39217752
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 39217746}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4737241ef8127854992719744060d48a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &39217753
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 39217746}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0bf966edb7e75f247a062b496d6dbb53, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &233300914
 GameObject:
   m_ObjectHideFlags: 0
@@ -267,7 +356,7 @@ GameObject:
   - component: {fileID: 233300916}
   - component: {fileID: 233300917}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: DungeonGeneration
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -310,10 +399,7 @@ MonoBehaviour:
   chanceOfDying: 0
   chanceOfNewWalker: 0.5
   chanceOfSwitchingDir: 0.25
-  perlinLayers: 3
-  heightScale: 1
-  sharpness: 1
-  scale: 0.1
+  despeckleNeighbourLimit: 7
 --- !u!1 &1400284316
 GameObject:
   m_ObjectHideFlags: 0
