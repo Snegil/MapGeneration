@@ -392,14 +392,14 @@ MonoBehaviour:
   floorPrefab: {fileID: 5815283340469948270, guid: 2d2d7d039c1e05645875091b7d691a47, type: 3}
   wallPrefab: {fileID: 3374658579915093808, guid: fb676d26b2a0caa4fafa41fb32a46df4, type: 3}
   maxWalkers: 1
-  levelWidth: 96
-  levelHeight: 48
+  levelWidth: 32
+  levelHeight: 32
   edgeOffset: 4
-  maxIterations: 1024
-  chanceOfDying: 0
+  maxIterations: 512
+  chanceOfDying: 0.01
   chanceOfNewWalker: 0.5
-  chanceOfSwitchingDir: 0.25
-  despeckleNeighbourLimit: 7
+  chanceOfSwitchingDir: 0.5
+  despeckleNeighbourLimit: 6
 --- !u!1 &1400284316
 GameObject:
   m_ObjectHideFlags: 0
