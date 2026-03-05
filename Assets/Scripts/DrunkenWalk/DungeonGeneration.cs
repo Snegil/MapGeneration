@@ -1,6 +1,8 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class DungeonGeneration : MonoBehaviour
 {
@@ -15,6 +17,7 @@ public class DungeonGeneration : MonoBehaviour
     List<Walker> walkers = new();
     [SerializeField]
     int maxWalkers = 1;
+    public float MaxWalkers { set { maxWalkers = (int)value; } }
 
     [SerializeField]
     int levelWidth;
@@ -34,24 +37,57 @@ public class DungeonGeneration : MonoBehaviour
     [SerializeField]
     int edgeOffset = 3;
 
-    int iterations;
     [SerializeField]
     int maxIterations;
+    public float MaxIterations { set { maxIterations = (int)value; } }
 
     [SerializeField]
     float chanceOfDying = 0.25f;
+    public float ChanceOfDying { set { chanceOfDying = value; } }
 
     [SerializeField]
     float chanceOfNewWalker = 0.5f;
+    public float ChanceOfNewWalker { set { chanceOfNewWalker = value; } }
 
     [SerializeField]
     float chanceOfSwitchingDir = 0.5f;
+    public float ChanceOfSwitchingDir { set { chanceOfSwitchingDir = value; } }
 
     [SerializeField]
     int despeckleNeighbourLimit = 4;
 
     Vector2Int gridXLimits;
     Vector2Int gridYLimits;
+
+    public void RegenerateMap(InputAction.CallbackContext context)
+    {
+        if (!context.started) return;
+        StartCoroutine(RegenerateMapCoroutine());
+    }
+    public void RegenerateMap()
+    {
+        StartCoroutine(RegenerateMapCoroutine());
+    }
+
+    IEnumerator RegenerateMapCoroutine()
+    {
+        ResetMap();
+        yield return new WaitForSeconds(0.1f);
+        Setup();
+
+        GenerateFloors();
+        Despeckle();
+        GenerateWalls();
+        GenerateMap();
+    }
+    void ResetMap()
+    {
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            Destroy(transform.GetChild(i).gameObject);
+        }
+        walkers.Clear();
+    }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -75,8 +111,6 @@ public class DungeonGeneration : MonoBehaviour
 
         // INITIALISE WALKER
         walkers.Add(new Walker(gridXLimits, gridYLimits));
-        // walkers.Add(new Walker(gridXLimits, gridYLimits));
-        // walkers.Add(new Walker(gridXLimits, gridYLimits));
     }
 
     void SetAllTilesAsEmpty()
@@ -92,6 +126,7 @@ public class DungeonGeneration : MonoBehaviour
 
     void GenerateFloors()
     {
+        int iterations = 0;
         do
         {
             for (int i = 0; i < walkers.Count; i++)
@@ -144,8 +179,15 @@ public class DungeonGeneration : MonoBehaviour
         {
             for (int y = edgeOffset; y < grid.GetLength(1) - edgeOffset; y++)
             {
-                bool[] neighbouring = new bool[] { grid[x, y + 1] == LevelTile.Floor, grid[x + 1, y + 1] == LevelTile.Floor, grid[x + 1, y] == LevelTile.Floor, grid[x + 1, y - 1] == LevelTile.Floor, grid[x, y - 1] == LevelTile.Floor, grid[x - 1, y - 1] == LevelTile.Floor, grid[x - 1, y] == LevelTile.Floor, grid[x - 1, y + 1] == LevelTile.Floor };
-                Debug.Log(neighbouring.Count(c => c));
+                bool[] neighbouring = new bool[] { grid[x, y + 1] == LevelTile.Floor,
+                                                   grid[x + 1, y + 1] == LevelTile.Floor,
+                                                   grid[x + 1, y] == LevelTile.Floor,
+                                                   grid[x + 1, y - 1] == LevelTile.Floor,
+                                                   grid[x, y - 1] == LevelTile.Floor,
+                                                   grid[x - 1, y - 1] == LevelTile.Floor,
+                                                   grid[x - 1, y] == LevelTile.Floor,
+                                                   grid[x - 1, y + 1] == LevelTile.Floor
+                                                 };
                 if (neighbouring.Count(c => c) >= despeckleNeighbourLimit)
                 {
                     grid[x, y] = LevelTile.Floor;
@@ -216,9 +258,33 @@ public class DungeonGeneration : MonoBehaviour
 
     public void GenerateMap()
     {
-        for (int x = 0; x < levelWidth - 1; x++)
+        StartCoroutine(GenerateTiles());
+        return;
+        // for (int x = 0; x < levelWidth - 1; x++)
+        // {
+        //     for (int z = 0; z < levelHeight - 1; z++)
+        //     {
+        //         switch (grid[x, z])
+        //         {
+        //             case LevelTile.Floor:
+        //                 Instantiate(floorPrefab, new Vector3(x, 0.1f, z), Quaternion.identity, transform);
+        //                 break;
+        //             case LevelTile.Wall:
+        //                 Instantiate(wallPrefab, new Vector3(x, 0.1f, z), Quaternion.identity, transform);
+        //                 break;
+        //             default:
+        //                 //Debug.Log("Empty.");
+        //                 break;
+        //         }
+        //     }
+        // }
+    }
+    IEnumerator GenerateTiles()
+    {
+        for (int z = levelHeight - 1; z > 0; z--)
         {
-            for (int z = 0; z < levelHeight - 1; z++)
+            yield return new WaitForSeconds(0.01f);
+            for (int x = 0; x < levelWidth - 1; x++)
             {
                 switch (grid[x, z])
                 {

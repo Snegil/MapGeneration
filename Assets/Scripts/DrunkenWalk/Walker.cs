@@ -80,6 +80,7 @@ public class Walker
         {
             newDirection = RandomDirection();
         } while (Direction == newDirection);
+        Debug.Log(newDirection == direction);
         direction = newDirection;
     }
 
