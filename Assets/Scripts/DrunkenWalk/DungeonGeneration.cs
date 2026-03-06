@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 public class DungeonGeneration : MonoBehaviour
 {
@@ -53,6 +54,9 @@ public class DungeonGeneration : MonoBehaviour
     float chanceOfSwitchingDir = 0.5f;
     public float ChanceOfSwitchingDir { set { chanceOfSwitchingDir = value; } }
 
+    bool shouldDespeckle = true;
+    public bool ShouldDespeckle { set { shouldDespeckle = value; } }
+
     [SerializeField]
     int despeckleNeighbourLimit = 4;
 
@@ -79,7 +83,7 @@ public class DungeonGeneration : MonoBehaviour
         Setup();
 
         GenerateFloors();
-        Despeckle();
+        if (shouldDespeckle) Despeckle();
         GenerateWalls();
         GenerateMap();
     }
@@ -107,9 +111,6 @@ public class DungeonGeneration : MonoBehaviour
         gridYLimits = new(edgeOffset, grid.GetLength(1) - 1 - edgeOffset);
 
         SetAllTilesAsEmpty();
-
-        // INITIALISE WALKER
-        walkers.Add(new Walker(gridXLimits, gridYLimits));
     }
 
     void SetAllTilesAsEmpty()
@@ -153,7 +154,7 @@ public class DungeonGeneration : MonoBehaviour
             }
 
             // CHECK IF A NEW WALKER SHOULD BE MADE
-            if (Random.value > chanceOfNewWalker && walkers.Count < maxWalkers)
+            if (Random.value < chanceOfNewWalker && walkers.Count < maxWalkers)
             {
                 walkers.Add(new Walker(gridXLimits, gridYLimits));
             }
@@ -161,7 +162,7 @@ public class DungeonGeneration : MonoBehaviour
             // CHECK IF THE WALKERS SHOULD CHANGE DIRECTION
             for (int i = 0; i < walkers.Count; i++)
             {
-                if (Random.value > chanceOfSwitchingDir)
+                if (Random.value < chanceOfSwitchingDir)
                 {
                     walkers[i].ChangeDirection();
                 }
@@ -269,9 +270,10 @@ public class DungeonGeneration : MonoBehaviour
     {
         for (int z = levelHeight - 1; z > 0; z--)
         {
-            yield return new WaitForSeconds(0.01f);
+
             for (int x = 0; x < levelWidth - 1; x++)
             {
+
                 switch (grid[x, z])
                 {
                     case LevelTile.Floor:
@@ -285,6 +287,7 @@ public class DungeonGeneration : MonoBehaviour
                         break;
                 }
             }
+            yield return new WaitForSeconds(0.01f);
         }
     }
 }
