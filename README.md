@@ -6,10 +6,11 @@ MapGeneration uses the **Drunkard's Walk Algorithm** to procedurally generate 2D
 
 ## Features
 - Procedural terrain generation
-
-## Future Features
 - Saving generated maps to a file
 - Loading a saved map
+  
+## Future Features
+Nothing at this point in time.
 
 ## How to run
 1. Download `.zip` from **[releases](https://github.com/Snegil/MapGeneration/releases)**
