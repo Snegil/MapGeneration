@@ -1,5 +1,4 @@
 # MapGeneration
-
 Procedural map generation experiment written in C# and Unity.
 
 ## Description
@@ -13,8 +12,6 @@ MapGeneration uses the **Drunkard's Walk Algorithm** to procedurally generate 2D
 - Loading a saved map
 
 ## How to run
-1. Download `.zip` from the **[releases](https://github.com/Snegil/MapGeneration/releases)**
+1. Download `.zip` from **[releases](https://github.com/Snegil/MapGeneration/releases)**
 2. Extract the files
 3. Run `.exe` file
-
-
