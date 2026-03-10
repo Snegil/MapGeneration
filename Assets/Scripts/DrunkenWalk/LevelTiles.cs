@@ -1,4 +1,4 @@
-public enum LevelTile
+public enum LevelTiles
 {
     Empty,
     Water,

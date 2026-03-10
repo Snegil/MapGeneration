@@ -2,13 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using UnityEngine.UI;
 
 public class DungeonGeneration : MonoBehaviour
 {
-    public enum LevelTile { Empty, Floor, Wall }
-
     [SerializeField]
     GameObject floorPrefab;
 
@@ -16,24 +12,24 @@ public class DungeonGeneration : MonoBehaviour
     GameObject wallPrefab;
 
     List<Walker> walkers = new();
+
+    [Space, SerializeField]
+    int startingWalkers = 1;
+    public float StartingWalkers { set { startingWalkers = (int)value; } }
+
     [SerializeField]
     int maxWalkers = 1;
     public float MaxWalkers { set { maxWalkers = (int)value; } }
 
     [SerializeField]
     int levelWidth;
+    public float LevelWidth { get { return levelWidth; } set { levelWidth = (int)value; } }
+
     [SerializeField]
     int levelHeight;
+    public float LevelHeight { get { return levelHeight; } set { levelHeight = (int)value; } }
 
-    LevelTile[,] grid;
-
-    public void AddToGrid(Vector2Int pos, LevelTile levelTile)
-    {
-        if (grid[pos.x, pos.y] == LevelTile.Empty || grid[pos.x, pos.y] == LevelTile.Empty)
-        {
-            grid[pos.x, pos.y] = levelTile;
-        }
-    }
+    DungeonGrid grid;
 
     [SerializeField]
     int edgeOffset = 3;
@@ -63,33 +59,35 @@ public class DungeonGeneration : MonoBehaviour
     Vector2Int gridXLimits;
     Vector2Int gridYLimits;
 
-    public void RegenerateMap(InputAction.CallbackContext context)
+    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    void Start()
     {
-        if (!context.started) return;
-        StopAllCoroutines();
-        StartCoroutine(RegenerateMapCoroutine());
-    }
-    // Regenerate map to get a completely new one.
-    public void RegenerateMap()
-    {
-        StopAllCoroutines();
-        StartCoroutine(RegenerateMapCoroutine());
-    }
-
-    IEnumerator RegenerateMapCoroutine()
-    {
-        ResetMap();
-        yield return new WaitForSeconds(0.1f);
         Setup();
+        Generate();
+    }
 
+    void Setup()
+    {
+        grid = new DungeonGrid(levelWidth, levelHeight);
+
+        gridXLimits = new(edgeOffset, levelWidth - 1 - edgeOffset);
+        gridYLimits = new(edgeOffset, levelHeight - 1 - edgeOffset);
+    }
+
+    public void Generate()
+    {
+        if (grid.HasTiles()) ResetMap();
+
+        CreateStartingWalkers();
         GenerateFloors();
         if (shouldDespeckle) Despeckle();
         GenerateWalls();
         GenerateMap();
     }
-    // Clear all child-objects and all walkers.
+
     void ResetMap()
     {
+        grid.SetAllTilesAsEmpty();
         for (int i = 0; i < transform.childCount; i++)
         {
             Destroy(transform.GetChild(i).gameObject);
@@ -97,33 +95,13 @@ public class DungeonGeneration : MonoBehaviour
         walkers.Clear();
     }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    void CreateStartingWalkers()
     {
-        RegenerateMap();
-    }
-
-    void Setup()
-    {
-        // INITIALISE GRID
-        grid = new LevelTile[levelWidth, levelHeight];
-        gridXLimits = new(edgeOffset, grid.GetLength(0) - 1 - edgeOffset);
-        gridYLimits = new(edgeOffset, grid.GetLength(1) - 1 - edgeOffset);
-
-        SetAllTilesAsEmpty();
-    }
-
-    void SetAllTilesAsEmpty()
-    {
-        for (int x = 0; x < levelWidth; x++)
+        for (int i = 0; i < startingWalkers; i++)
         {
-            for (int z = 0; z < levelHeight; z++)
-            {
-                grid[x, z] = LevelTile.Empty;
-            }
+            walkers.Add(new Walker(gridXLimits, gridYLimits));
         }
     }
-
 
     void GenerateFloors()
     {
@@ -134,9 +112,9 @@ public class DungeonGeneration : MonoBehaviour
             {
                 if (walkers[i] == null) break;
 
-                if (grid[walkers[i].Position.x, walkers[i].Position.y] == LevelTile.Empty)
+                if (grid.GetTileAtPos(walkers[i].Position.x, walkers[i].Position.y) == LevelTiles.Empty)
                 {
-                    AddToGrid(walkers[i].Position, LevelTile.Floor);
+                    grid.SetTileAtPos(walkers[i].Position, LevelTiles.Floor);
                 }
             }
 
@@ -150,7 +128,15 @@ public class DungeonGeneration : MonoBehaviour
             if (Random.value < chanceOfDying && walkers.Count > 0)
             {
                 if (walkers[0] == null) break;
-                walkers.RemoveAt(Random.Range(0, walkers.Count - 1));
+                Walker walker = walkers[0];
+                for (int i = 0; i < walkers.Count; i++)
+                {
+                    if (walkers[i].TimesWalked > walker.TimesWalked)
+                    {
+                        walker = walkers[i];
+                    }
+                }
+                walkers.Remove(walker);
             }
 
             // CHECK IF A NEW WALKER SHOULD BE MADE
@@ -176,24 +162,32 @@ public class DungeonGeneration : MonoBehaviour
     // Despeckle checks all surrounding tiles and if the surrounding tiles match, change the target to floor.
     void Despeckle()
     {
-        for (int x = edgeOffset; x < grid.GetLength(0) - edgeOffset; x++)
+        for (int x = edgeOffset; x < grid.GetGridLength().x - edgeOffset; x++)
         {
-            for (int y = edgeOffset; y < grid.GetLength(1) - edgeOffset; y++)
+            for (int y = edgeOffset; y < grid.GetGridLength().y - edgeOffset; y++)
             {
                 // Check all surrounding tiles, and check if they're leveltile.floor.
-                bool[] neighbouring = new bool[] { grid[x, y + 1] == LevelTile.Floor,
-                                                   grid[x + 1, y + 1] == LevelTile.Floor,
-                                                   grid[x + 1, y] == LevelTile.Floor,
-                                                   grid[x + 1, y - 1] == LevelTile.Floor,
-                                                   grid[x, y - 1] == LevelTile.Floor,
-                                                   grid[x - 1, y - 1] == LevelTile.Floor,
-                                                   grid[x - 1, y] == LevelTile.Floor,
-                                                   grid[x - 1, y + 1] == LevelTile.Floor
-                                                 };
+                List<bool> neighbouring = new();
+
+                for (int ix = -1; ix < 2; ix++)
+                {
+                    for (int iy = -1; iy < 2; iy++)
+                    {
+                        if (ix == 0 && iy == 0) continue;
+
+                        if (grid.GetTileAtPos(x + ix, y + iy) == LevelTiles.Floor)
+                        {
+                            neighbouring.Add(true);
+                            continue;
+                        }
+                        neighbouring.Add(false);
+                    }
+                }
+
                 // If the amount of neighbouring tiles are floors, change the targeted one, to floor.
                 if (neighbouring.Count(c => c) >= despeckleNeighbourLimit)
                 {
-                    grid[x, y] = LevelTile.Floor;
+                    grid.SetTileAtPos(new Vector2Int(x, y), LevelTiles.Floor);
                 }
             }
         }
@@ -202,59 +196,24 @@ public class DungeonGeneration : MonoBehaviour
     // Check all tiles on the grid, and if a leveltile.floor has leveltile.empty next to it, add a wall there.
     void GenerateWalls()
     {
-        for (int x = edgeOffset; x < grid.GetLength(0); x++)
+        for (int x = edgeOffset; x < grid.GetGridLength().x; x++)
         {
-            for (int y = edgeOffset; y < grid.GetLength(1); y++)
+            for (int y = edgeOffset; y < grid.GetGridLength().y; y++)
             {
-                if (grid[x, y] != LevelTile.Floor) continue;
+                if (grid.GetTileAtPos(x, y) != LevelTiles.Floor) continue;
 
-
-                // NORTH
-                if (grid[x, y + 1] == LevelTile.Empty)
+                // Check all tiles around the X and Y coordinate, if they are empty, make them a wall.
+                for (int ix = -1; ix < 2; ix++)
                 {
-                    grid[x, y + 1] = LevelTile.Wall;
-                }
+                    for (int iy = -1; iy < 2; iy++)
+                    {
+                        if (ix == 0 && iy == 0) continue;
 
-                // NORTH-EAST
-                if (grid[x + 1, y + 1] == LevelTile.Empty)
-                {
-                    grid[x + 1, y + 1] = LevelTile.Wall;
-                }
-
-                // EAST 
-                if (grid[x + 1, y] == LevelTile.Empty)
-                {
-                    grid[x + 1, y] = LevelTile.Wall;
-                }
-
-                // SOUTH-EAST
-                if (grid[x + 1, y - 1] == LevelTile.Empty)
-                {
-                    grid[x + 1, y - 1] = LevelTile.Wall;
-                }
-
-                // SOUTH
-                if (grid[x, y - 1] == LevelTile.Empty)
-                {
-                    grid[x, y - 1] = LevelTile.Wall;
-                }
-
-                // SOUTH-WEST
-                if (grid[x - 1, y - 1] == LevelTile.Empty)
-                {
-                    grid[x - 1, y - 1] = LevelTile.Wall;
-                }
-
-                // WEST
-                if (grid[x - 1, y] == LevelTile.Empty)
-                {
-                    grid[x - 1, y] = LevelTile.Wall;
-                }
-
-                // NORTH-WEST
-                if (grid[x - 1, y + 1] == LevelTile.Empty)
-                {
-                    grid[x - 1, y + 1] = LevelTile.Wall;
+                        if (grid.GetTileAtPos(x + ix, y + iy) == LevelTiles.Empty)
+                        {
+                            grid.SetTileAtPos(new Vector2Int(x + ix, y + iy), LevelTiles.Wall);
+                        }
+                    }
                 }
             }
         }
@@ -262,9 +221,11 @@ public class DungeonGeneration : MonoBehaviour
 
     public void GenerateMap()
     {
+        StopAllCoroutines();
         StartCoroutine(GenerateTiles());
         return;
     }
+
     // Instantiate tiles into game world at assigned locations, reasoning behind coroutine is to make it animated.
     IEnumerator GenerateTiles()
     {
@@ -273,13 +234,12 @@ public class DungeonGeneration : MonoBehaviour
 
             for (int x = 0; x < levelWidth - 1; x++)
             {
-
-                switch (grid[x, z])
+                switch (grid.GetTileAtPos(x, z))
                 {
-                    case LevelTile.Floor:
+                    case LevelTiles.Floor:
                         Instantiate(floorPrefab, new Vector3(x, 0.1f, z), Quaternion.identity, transform);
                         break;
-                    case LevelTile.Wall:
+                    case LevelTiles.Wall:
                         Instantiate(wallPrefab, new Vector3(x, 0.1f, z), Quaternion.identity, transform);
                         break;
                     default:
@@ -289,5 +249,25 @@ public class DungeonGeneration : MonoBehaviour
             }
             yield return new WaitForSeconds(0.01f);
         }
+    }
+
+    public DungeonGrid GetDungeonGrid()
+    {
+        return grid;
+    }
+
+    // Set all tiles into the grid and generate them. (This is called from LoadMapData.cs)
+    public void LoadedMap(LevelTiles[,] levelTiles)
+    {
+        ResetMap();
+
+        for (int x = 0; x < grid.GetGridLength().x; x++)
+        {
+            for (int y = 0; y < grid.GetGridLength().y; y++)
+            {
+                grid.SetTileAtPos(x, y, levelTiles[x, y]);
+            }
+        }
+        GenerateMap();
     }
 }

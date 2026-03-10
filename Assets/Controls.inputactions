@@ -7,15 +7,6 @@
             "id": "0671149e-ebe8-4885-98bf-08b36f5e925b",
             "actions": [
                 {
-                    "name": "SPACEBAR",
-                    "type": "Button",
-                    "id": "e24ced6a-71cd-439e-bd12-b6ee9c8ee7b4",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
                     "name": "ESCAPE",
                     "type": "Button",
                     "id": "cfed94c5-f87d-453c-ad1e-34acaff1c800",
@@ -26,17 +17,6 @@
                 }
             ],
             "bindings": [
-                {
-                    "name": "",
-                    "id": "2e273dd6-1406-468f-b1ee-53b1127087b6",
-                    "path": "<Keyboard>/space",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "SPACEBAR",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
                 {
                     "name": "",
                     "id": "679e1528-c8bb-45d9-b295-6d1d18ee7225",

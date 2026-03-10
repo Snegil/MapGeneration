@@ -3,8 +3,11 @@ using UnityEngine;
 
 public class Walker
 {
+    //TODO: MAYBE REMOVE THE TEXT BETWEEN <PARAM> TAGS
     Vector2Int direction;
     public Vector2Int Direction { get { return direction; } }
+    int timesWalked = 0;
+    public int TimesWalked { get { return timesWalked; } }
 
     Vector2Int position;
     public Vector2Int Position { get { return position; } }
@@ -68,6 +71,7 @@ public class Walker
     {
         position += direction;
         position = new Vector2Int(Mathf.Clamp(position.x, minX, maxX), Mathf.Clamp(position.y, minY, maxY));
+        timesWalked++;
     }
 
     /// <summary>
